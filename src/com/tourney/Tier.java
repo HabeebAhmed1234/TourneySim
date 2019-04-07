@@ -1,5 +1,7 @@
 package com.tourney;
 
+import com.sun.istack.internal.Nullable;
+
 import java.util.*;
 
 public class Tier {
@@ -24,6 +26,22 @@ public class Tier {
         List<Team> winningTeams = endPendingGames(currentTimeMins);
         startNewGames(currentTimeMins);
         return winningTeams;
+    }
+
+    /**
+     * use this method to promote teams to this tier
+     */
+    public void addNewTeams(List<Team> teams) {
+        mIdleTeamsInTier.addAll(teams);
+    }
+
+    public boolean isTierFinished() {
+        return mIdleTeamsInTier.isEmpty() && mPendingGames.isEmpty();
+    }
+
+    @Nullable
+    public Team hasOneIdleTeam() {
+        return (mIdleTeamsInTier.size() == 1 && mPendingGames.isEmpty()) ? mIdleTeamsInTier.get(0) : null;
     }
 
     /**
@@ -52,7 +70,7 @@ public class Tier {
         boolean isFirstTeamWinner = ((int)(Math.random() * 2)) == 1;
         final Team winningTeam = isFirstTeamWinner ? game.team1 : game.team2;
         final Team losingTeam = isFirstTeamWinner ? game.team2 : game.team1;
-        mTeamsPool.idleTeams.add(losingTeam);
+        mTeamsPool.addTeam(losingTeam);
         return winningTeam;
     }
 
@@ -91,12 +109,5 @@ public class Tier {
                 idleTeamsIterator.remove();
             }
         }
-    }
-
-    /**
-     * use this method to promote teams to this tier
-     */
-    public void addNewTeams(List<Team> teams) {
-        mIdleTeamsInTier.addAll(teams);
     }
 }

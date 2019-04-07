@@ -1,35 +1,81 @@
 package com.tourney;
 
-import java.util.PriorityQueue;
+import com.sun.istack.internal.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * on each timestep this class will
- * 1. find idle teams from the {@link TeamsPool} to play in this tournament if the tournament is still open for entry
- * 2. find pairs of teams to play against one another in each tier
- * 3. play the teams against one another
- * 4. advance the winning teams to the next tier
- * 5. kick the losing teams out and return them to the idle teams pool
+ * Coordinates the set of tiers in a tournament.
  *
+ * - Assumes that all teams are present at the start of the tournament
  */
 public class TournamentCoordinator {
 
     public final long startTimeMins;
 
-    private long endTime;
+    private long endTime = -1;
     private final TeamsPool mTeamsPool;
-    private final PriorityQueue<Team> mTierList = new PriorityQueue();
+    private final List<Tier> mTierList = new ArrayList<>();
 
     public TournamentCoordinator(final long startTimeMins, final TeamsPool teamsPool) {
         mTeamsPool = teamsPool;
         this.startTimeMins = startTimeMins;
+
+        // Initialize the tournament by creating the first tier
+        Tier firstTier = new Tier(mTeamsPool);
+        firstTier.addNewTeams(mTeamsPool.removeTeamsForNewTournament());
+        mTierList.add(new Tier(mTeamsPool));
     }
 
-
-    public void onTimeStep(final long currentTimeMins) {
-
+    /**
+     * Loop over all tiers
+     * 1. Set winners from last tier into this tier
+     * 2. deliver timestep to tier
+     * 3. If we finish looping through all tiers and there are still winners from the last tier create a new tier
+     * 4. If 3 and all tiers except the last tier have no more team conclude the tournament (return true)
+     *
+     * @return the winning team if the tournament is finished null otherwise
+     */
+    @Nullable
+    public Team onTimeStep(final long currentTimeMins) {
+        List<Team> winningTeamsFromLastTier = new ArrayList<>();
+        for (Tier tier : mTierList) {
+            if (!winningTeamsFromLastTier.isEmpty()) {
+                tier.addNewTeams(winningTeamsFromLastTier);
+            }
+            winningTeamsFromLastTier = tier.onTimeStep(currentTimeMins);
+        }
+        if (!winningTeamsFromLastTier.isEmpty()) {
+            Tier newTier = new Tier(mTeamsPool);
+            newTier.addNewTeams(winningTeamsFromLastTier);
+            mTierList.add(newTier);
+            @Nullable Team winningTeam = isTournamentFinished();
+            if (winningTeam != null) {
+                endTime = currentTimeMins;
+            }
+            return winningTeam;
+        }
+        return null;
     }
 
-    private void maybeEndTournament() {
+    public long getEndTime() {
+        return endTime;
+    }
 
+    /**
+     * Tourney is finished only if each tier is finished and the last tier only has one idle team (winning team)
+     * @return the winning team if the tournament is finished null otherwise
+     */
+    @Nullable
+    private Team isTournamentFinished() {
+        Tier tier = null;
+        for (int i = 0 ; i < mTierList.size() ; i++) {
+            tier = mTierList.get(i);
+            if (i != (mTierList.size()-1) && !tier.isTierFinished()) {
+                return null;
+            }
+        }
+        return tier.hasOneIdleTeam();
     }
 }
