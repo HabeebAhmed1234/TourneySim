@@ -6,6 +6,6 @@ package com.tourney;
 public class TeamsGenerator {
 
     public static TeamsPool generateStartingTeamsPool() {
-
+        return new TeamsPool();
     }
 }

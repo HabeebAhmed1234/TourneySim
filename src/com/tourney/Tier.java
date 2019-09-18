@@ -1,6 +1,6 @@
 package com.tourney;
 
-import com.sun.istack.internal.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 

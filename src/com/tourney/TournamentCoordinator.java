@@ -1,6 +1,7 @@
 package com.tourney;
 
-import com.sun.istack.internal.Nullable;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,11 +51,11 @@ public class TournamentCoordinator {
             Tier newTier = new Tier(mTeamsPool);
             newTier.addNewTeams(winningTeamsFromLastTier);
             mTierList.add(newTier);
-            @Nullable Team winningTeam = isTournamentFinished();
-            if (winningTeam != null) {
+            @Nullable Team firstPlaceTeam = isTournamentFinished();
+            if (firstPlaceTeam != null) {
                 endTime = currentTimeMins;
             }
-            return winningTeam;
+            return firstPlaceTeam;
         }
         return null;
     }
